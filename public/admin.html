@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    
+   .navbar {
+      background: linear-gradient(90deg, #0d6efd 0%, #004085 100%) !important;
+    }
+    
+    .navbar-brand {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .card {
+      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+      border: 0;
+      border-radius: 0.5rem;
+    }
+    .qr-preview {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 0.3rem;
+      border: 2px solid #dee2e6;
+      transition: transform 0.2s ease;
+    }
+    .qr-preview:hover {
+      transform: scale(1.05);
+    }
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.8rem;
+    }
+    #loading {
+      text-align: center;
+      padding: 3rem;
+      font-size: 1.2rem;
+      color: #6c757d;
+    }
+    #error {
+      padding: 2rem;
+      text-align: center;
+      color: #dc3545;
+      display: none;
+    }
+    .table th {
+      font-weight: 600;
+      background-color: #f8f9fa;
+    }
+    .form-control, .form-select {
+      border-radius: 0.4rem;
+    }
+    .btn-outline-light:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Smooth collapse animation for add user form */
+    #addUserFormContainer {
+      transition: all 0.4s ease-in-out;
+      will-change: height, opacity;
+    }
+    
+    #addUserFormContainer.collapse:not(.show) {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    
+    #addUserFormContainer.collapsing {
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: height 0.4s ease-in-out, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    }
+    
+    #addUserFormContainer.collapse.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-gradient" style="background: linear-gradient(90deg, #dc3545 0%, #8b0000 100%);">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand d-flex align-items-center" href="/dashboard">
+      <i class="bi bi-shield-fill me-2"></i> Admin Panel
+    </a>
+    <div>
+      <button id="btnLogout" class="btn btn-outline-light d-flex align-items-center">
+        <i class="bi bi-box-arrow-right me-1"></i> Logout
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Container -->
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-6 fw-bold">Manajemen Pengguna</h1>
+    <button class="btn btn-outline-primary d-lg-none" data-bs-toggle="collapse" data-bs-target="#addUserFormContainer">
+      <i class="bi bi-plus-lg"></i> Tambah User
+    </button>
+  </div>
+
+  <!-- Add User Form Card -->
+  <div class="card mb-4 collapse" id="addUserFormContainer">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0 d-flex align-items-center">
+        <i class="bi bi-person-plus me-2"></i> Tambah Pengguna Baru
+      </h5>
+    </div>
+    <div class="card-body">
+      <form id="addUserForm" class="row g-3">
+        <div class="col-md-2">
+          <label class="form-label">Username</label>
+          <input name="username" class="form-control" placeholder="Username" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Password</label>
+          <input name="password" type="password" class="form-control" placeholder="Password" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Nama</label>
+          <input name="nama" class="form-control" placeholder="Nama">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Jabatan</label>
+          <input name="jabatan" class="form-control" placeholder="Jabatan">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Role</label>
+          <select name="role" class="form-select">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-check-circle me-1"></i> Tambah
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Export Buttons -->
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <button class="btn btn-success" onclick="exportCSV()">
+      <i class="bi bi-filetype-csv me-1"></i> Export CSV
+    </button>
+    <button class="btn btn-success" onclick="exportExcel()">
+      <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+    </button>
+  </div>
+
+  <!-- Loading & Error States -->
+  <div id="loading">Memuat data pengguna...</div>
+  <div id="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    Gagal memuat data. Silakan coba lagi.
+  </div>
+
+  <!-- User Table -->
+  <div id="userTableCard" class="card" style="display:none;">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Daftar Pengguna</h5>
+      <span id="userCount" class="badge bg-light text-dark">0 pengguna</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Username</th>
+              <th scope="col">Nama</th>
+              <th scope="col">Jabatan</th>
+              <th scope="col">Role</th>
+              <th scope="col">Total Absen</th>
+              <th scope="col">QR Code</th>
+              <th scope="col">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+  <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header bg-primary text-white">
+      <i class="bi bi-info-circle-fill me-2"></i>
+      <strong class="me-auto">Notifikasi</strong>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body" id="toastMessage">
+      Pesan akan muncul di sini.
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Toast helper
+  function showToast(message, isSuccess = true) {
+    const toastEl = document.getElementById('liveToast');
+    const toastBody = document.getElementById('toastMessage');
+    const toastHeader = toastEl.querySelector('.toast-header');
+    
+    toastBody.textContent = message;
+    if (isSuccess) {
+      toastHeader.classList.remove('bg-danger');
+      toastHeader.classList.add('bg-primary');
+    } else {
+      toastHeader.classList.remove('bg-primary');
+      toastHeader.classList.add('bg-danger');
+    }
+    
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+  }
+
+  async function apiGet(url) {
+    const r = await fetch(url);
+    if (r.status === 401) {
+      location.href = '/login.html';
+      throw 'Unauthorized';
+    }
+    if (!r.ok) {
+      throw new Error(`HTTP error! status: ${r.status}`);
+    }
+    return r.json();
+  }
+
+  async function fetchUsers() {
+    const loadingEl = document.getElementById('loading');
+    const errorEl = document.getElementById('error');
+    const tableCard = document.getElementById('userTableCard');
+    const userCount = document.getElementById('userCount');
+    const tbody = document.getElementById('userTableBody');
+
+    try {
+      loadingEl.style.display = 'block';
+      errorEl.style.display = 'none';
+      tableCard.style.display = 'none';
+
+      const res = await apiGet('/api/admin/users');
+      if (!res.success) throw new Error(res.message || 'Gagal ambil data');
+
+      tbody.innerHTML = '';
+      const users = res.users || [];
+      userCount.textContent = `${users.length} pengguna`;
+
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="fw-bold">${u.id}</td>
+          <td><span class="badge bg-secondary">${u.username}</span></td>
+          <td>${u.nama || '<span class="text-muted">Belum diisi</span>'}</td>
+          <td>${u.jabatan || '<span class="text-muted">-</span>'}</td>
+          <td>
+            <span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-info'}">
+              ${u.role.charAt(0).toUpperCase() + u.role.slice(1)}
+            </span>
+          </td>
+          <td>
+            <span class="badge bg-success">${u.total_absen || 0}</span>
+          </td>
+          <td>
+            ${u.qr_code 
+              ? `<img src="${u.qr_code}" class="qr-preview" alt="QR Code ${u.username}" title="Klik untuk perbesar" data-bs-toggle="modal" data-bs-target="#qrModal" onclick="showQR('${u.qr_code}', '${u.username}')">`
+              : '<span class="text-muted">Belum ada</span>'
+            }
+          </td>
+          <td class="text-nowrap">
+            <button class="btn btn-sm btn-warning me-1" title="Reset Password" onclick="resetPass(${u.id})">
+              <i class="bi bi-key"></i>
+            </button>
+            <button class="btn btn-sm btn-info me-1" title="Regenerate QR Code" onclick="regenQR(${u.id})">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <button class="btn btn-sm btn-danger" title="Hapus Pengguna" onclick="delUser(${u.id})">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      tableCard.style.display = 'block';
+      loadingEl.style.display = 'none';
+
+    } catch (e) {
+      console.error(e);
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'block';
+      showToast('Gagal memuat data pengguna', false);
+    }
+  }
+
+  document.getElementById('addUserForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const body = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const j = await res.json();
+
+      if (j.success) {
+        showToast('Pengguna berhasil ditambahkan!');
+        e.target.reset();
+        fetchUsers();
+      } else {
+        showToast(j.message || 'Gagal menambahkan pengguna', false);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Terjadi kesalahan saat menambahkan pengguna', false);
+    }
+  });
+
+  async function resetPass(id) {
+    const pass = prompt('Masukkan password baru untuk user ini:', '123456');
+    if (!pass) return;
+
+    try {
+      const res = await fetch(`/api/admin/change-password/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: pass })
+      });
+      const j = await res.json();
+
+      if (j.success) {
+        showToast('Password berhasil direset!');
+      } else {
+        showToast(j.message || 'Gagal mereset password', false);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Terjadi kesalahan saat reset password', false);
+    }
+  }
+
+  async function regenQR(id) {
+    if (!confirm('Yakin ingin regenerate QR Code untuk user ini?')) return;
+
+    try {
+      const res = await fetch(`/api/admin/users/${id}/regenerate-qr`, { method: 'POST' });
+      const j = await res.json();
+
+      if (j.success) {
+        showToast('QR Code berhasil diregenerasi!');
+        fetchUsers();
+      } else {
+        showToast(j.message || 'Gagal regenerate QR Code', false);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Terjadi kesalahan saat regenerate QR', false);
+    }
+  }
+
+  async function delUser(id) {
+    if (!confirm('⚠️ Yakin ingin menghapus user ini? Tindakan tidak bisa dibatalkan!')) return;
+
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+      const j = await res.json();
+
+      if (j.success) {
+        showToast('Pengguna berhasil dihapus!');
+        fetchUsers();
+      } else {
+        showToast(j.message || 'Gagal menghapus pengguna', false);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Terjadi kesalahan saat menghapus pengguna', false);
+    }
+  }
+
+  function exportCSV() {
+    window.location.href = '/api/admin/export/csv';
+  }
+
+  function exportExcel() {
+    window.location.href = '/api/admin/export/excel';
+  }
+
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+    } catch (e) {
+      console.warn('Logout request failed, proceeding anyway.');
+    }
+    location.href = '/attendance.html';
+  });
+
+  // Modal QR Viewer
+  function showQR(qrUrl, username) {
+    const modalHtml = `
+      <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="qrModalLabel">QR Code — ${username}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+              <img src="${qrUrl}" class="img-fluid" style="max-height: 300px; max-width: 100%; border: 1px solid #dee2e6; border-radius: 0.5rem;">
+              <p class="mt-3 text-muted">Scan untuk absensi</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Remove existing modal if any
+    const existingModal = document.getElementById('qrModal');
+    if (existingModal) existingModal.remove();
+
+    // Append and show
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+    modal.show();
+  }
+
+  // Init
+  document.addEventListener('DOMContentLoaded', fetchUsers);
+</script>
+
+</body>
+</html>
