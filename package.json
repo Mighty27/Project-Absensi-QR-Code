@@ -1,26 +1,17 @@
 {
-  "name": "absensi-qr-postgres",
+  "name": "absensi-qr-sqlite",
   "version": "1.0.0",
-  "description": "Aplikasi Absensi QR Code dengan Node.js, Express, dan PostgreSQL (Render Ready)",
+  "description": "Aplikasi Absensi QR Code dengan Node.js, Express, dan better-sqlite3 (Render Ready)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": [
-    "express",
-    "absensi",
-    "postgresql",
-    "render",
-    "qrcode"
-  ],
-  "author": "Mighty27",
-  "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.0.0",
     "express": "^4.21.1",
     "express-session": "^1.17.3",
-    "pg": "^8.11.3",
     "qrcode": "^1.5.4",
     "xlsx": "^0.18.5"
   },
